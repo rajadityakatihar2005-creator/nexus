@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TECHFEST '26 | 3D Interactive Experience</title>
+    <link href="https://googleapis.com" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #05050a;
+            --primary: #00f3ff;
+            --secondary: #7000ff;
+            --accent: #ff0055;
+            --glass: rgba(15, 18, 30, 0.55);
+            --border: rgba(0, 243, 255, 0.25);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: #ffffff;
+            font-family: 'Space Grotesk', sans-serif;
+            overflow-x: hidden;
+        }
+
+        /* Fullscreen 3D Canvas */
+        #webgl-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 1;
+            outline: none;
+        }
+
+        /* HUD Navigation */
+        nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            padding: 1.5rem 4rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 10;
+            backdrop-filter: blur(8px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .logo {
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 900;
+            font-size: 1.5rem;
+            letter-spacing: 3px;
+            color: var(--primary);
+            text-shadow: 0 0 15px rgba(0, 243, 255, 0.5);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2.5rem;
+        }
+
+        .nav-links a {
+            color: #cbd5e1;
+            text-decoration: none;
+            font-size: 0.9rem;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            transition: color 0.3s;
+        }
+
+        .nav-links a:hover {
+            color: var(--primary);
+        }
+
+        /* Scroll Sections */
+        main {
+            position: relative;
+            z-index: 5;
+            pointer-events: none; /* Allows clicking through to the 3D object */
+        }
+
+        section {
+            min-height: 100vh;
+            padding: 0 8%;
+            display: flex;
+            align-items: center;
+        }
+
+        /* Hero Section */
+        #hero {
+            justify-content: flex-start;
+        }
+
+        .hero-content {
+            max-width: 600px;
+            pointer-events: auto;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.4rem 1rem;
+            border: 1px solid var(--primary);
+            border-radius: 50px;
+            font-size: 0.8rem;
+            letter-spacing: 2px;
+            color: var(--primary);
+            margin-bottom: 1.5rem;
+            background: rgba(0, 243, 255, 0.08);
+        }
+
+        h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 4.5rem;
+            line-height: 1.1;
+            font-weight: 900;
+            margin-bottom: 1.5rem;
+            background: linear-gradient(90deg, #ffffff, var(--primary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        p {
+            font-size: 1.15rem;
+            line-height: 1.6;
+            color: #94a3b8;
+            margin-bottom: 2rem;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 1rem 2.2rem;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            color: #05050a;
+            background: var(--primary);
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 25px rgba(0, 243, 255, 0.4);
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 0 35px rgba(0, 243, 255, 0.8);
+        }
+
+        /* Events Section */
+        #events {
+            justify-content: flex-end;
+        }
+
+        .glass-panel {
+            width: 520px;
+            background: var(--glass);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 2.5rem;
+            pointer-events: auto;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+        }
+
+        h2 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2.2rem;
+            margin-bottom: 1.5rem;
+            color: #fff;
+        }
+
+        .event-item {
+            padding: 1.2rem 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            transition: transform 0.3s;
+        }
+
+        .event-item:last-child {
+            border-bottom: none;
+        }
+
+        .event-item:hover {
+            transform: translateX(10px);
+        }
+
+        .event-item h3 {
+            color: var(--primary);
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.1rem;
+            margin-bottom: 0.4rem;
+        }
+
+        .event-item span {
+            font-size: 0.9rem;
+            color: #cbd5e1;
+        }
+
+        /* Workshops Section */
+        #workshops {
+            justify-content: flex-start;
+        }
+
+        /* Register Section */
+        #register {
+            justify-content: center;
+            text-align: center;
+        }
+
+        .cta-box {
+            max-width: 700px;
+            background: var(--glass);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--border);
+            padding: 4rem;
+            border-radius: 20px;
+            pointer-events: auto;
+        }
+
+        .hint {
+            position: fixed;
+            bottom: 20px;
+            right: 30px;
+            z-index: 10;
+            font-size: 0.8rem;
+            letter-spacing: 1px;
+            color: rgba(255, 255, 255, 0.5);
+            pointer-events: none;
+        }
+
+        @media (max-width: 768px) {
+            nav { padding: 1rem 1.5rem; }
+            .nav-links { display: none; }
+            h1 { font-size: 2.8rem; }
+            .glass-panel { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="webgl-canvas"></canvas>
+
+    <nav>
+        <div class="logo">TECHFEST // 26</div>
+        <div class="nav-links">
+            <a href="#hero">Overview</a>
+            <a href="#events">Competitions</a>
+            <a href="#workshops">Tech Labs</a>
+            <a href="#register">Pass</a>
+        </div>
+    </nav>
+
+    <main>
+        <!-- Section 1: Hero -->
+        <section id="hero">
+            <div class="hero-content">
+                <div class="badge">NOVEMBER 2026 • NATIONAL SYMPOSIUM</div>
+                <h1>BEYOND THE SINGULARITY</h1>
+                <p>Enter the ultimate 3D digital frontier. Compete in autonomous robotics, quantum algorithms, and spatial computing challenges with innovators nationwide.</p>
+                <a href="#register" class="btn">INITIALIZE ACCESS</a>
+            </div>
+        </section>
+
+        <!-- Section 2: Events -->
+        <section id="events">
+            <div class="glass-panel">
+                <h2>FLAGSHIP ARENAS</h2>
+                <div class="event-item">
+                    <h3>01. ROBOWARS: TITAN CLASH</h3>
+                    <span>60kg heavy-metal combat arena with ₹5,00,000 prize pool.</span>
+                </div>
+                <div class="event-item">
+                    <h3>02. NEURAL HACK 48</h3>
+                    <span>48-hour generative AI and spatial web development sprint.</span>
+                </div>
+                <div class="event-item">
+                    <h3>03. DRONE GRAND PRIX</h3>
+                    <span>High-speed FPV obstacle navigation through neon gates.</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: Workshops -->
+        <section id="workshops">
+            <div class="glass-panel">
+                <h2>FUTURE TECH LABS</h2>
+                <div class="event-item">
+                    <h3>QUANTUM COMPUTING 101</h3>
+                    <span>Hands-on qubit simulation and cryptographic protocols.</span>
+                </div>
+                <div class="event-item">
+                    <h3>WEBGL & SHADER ART</h3>
+                    <span>Build real-time 3D GPU graphics for the modern web.</span>
+                </div>
+                <div class="event-item">
+                    <h3>BRAIN-COMPUTER INTERFACES</h3>
+                    <span>Live EEG signal processing and prosthetic control demos.</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 4: Register -->
+        <section id="register">
+            <div class="cta-box">
+                <div class="badge">LIMITED SLOTS AVAILABLE</div>
+                <h2>CLAIM YOUR DIGITAL PASS</h2>
+                <p>Unlock full access to all 30+ competitions, keynote sessions, pro-nights, and maker spaces.</p>
+                <button class="btn" onclick="triggerOverdrive()">REGISTER NOW</button>
+            </div>
+        </section>
+    </main>
+
+    <div class="hint">[ CLICK 3D CORE TO PULSE • SCROLL TO MORPH ]</div>
+
+    <!-- Three.js & GSAP CDN -->
+    <script src="https://cloudflare.com"></script>
+    <script src="https://cloudflare.com"></script>
+    <script src="https://cloudflare.com"></script>
+
+    <script>
+        // 1. SCENE SETUP
+        const canvas = document.querySelector('#webgl-canvas');
+        const scene = new THREE.Scene();
